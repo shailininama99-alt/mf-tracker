@@ -35,36 +35,75 @@ function App() {
         return;
       }
 
+      // 1. Fetch Holdings (Now pulling Types and Percentages)
       const { data: holdingsData } = await supabase
         .from('mf_holdings')
-        .select('scheme_id, stock_name');
+        .select('scheme_id, stock_name, change_type, change_percentage');
 
       const holdingsByScheme = holdingsData?.reduce((acc: any, holding: any) => {
         if (!acc[holding.scheme_id]) {
-          acc[holding.scheme_id] = [];
+          acc[holding.scheme_id] = { entries: [], exits: [] };
         }
-        acc[holding.scheme_id].push(holding.stock_name);
+        
+        // Format the string dynamically based on the database values
+        const pct = holding.change_percentage ? `${holding.change_percentage}%` : '';
+        let displayStr = holding.stock_name;
+        
+        if (holding.change_type === 'New Entry') displayStr = `${holding.stock_name} (+${pct} New)`;
+        else if (holding.change_type === 'Added') displayStr = `${holding.stock_name} (+${pct})`;
+        else if (holding.change_type === 'Partial Exit') displayStr = `${holding.stock_name} (-${pct})`;
+        else if (holding.change_type === 'Complete Exit') displayStr = `${holding.stock_name} (-${pct} Exit)`;
+        
+        // Sort into the correct bucket
+        if (holding.change_type === 'New Entry' || holding.change_type === 'Added') {
+          acc[holding.scheme_id].entries.push(displayStr);
+        } else if (holding.change_type === 'Partial Exit' || holding.change_type === 'Complete Exit') {
+          acc[holding.scheme_id].exits.push(displayStr);
+        } else {
+           acc[holding.scheme_id].entries.push(displayStr);
+        }
+        
+        return acc;
+      }, {}) || {};
+
+      // 2. Fetch Alerts (Now pulling the URL)
+      const { data: alertsData } = await supabase
+        .from('mf_alerts')
+        .select('scheme_id, alert_text, alert_date, source_url')
+        .order('alert_date', { ascending: false });
+
+      const alertsByScheme = alertsData?.reduce((acc: any, alert: any) => {
+        if (!acc[alert.scheme_id]) {
+          acc[alert.scheme_id] = [];
+        }
+        acc[alert.scheme_id].push({
+          title: alert.alert_text,
+          time: new Date(alert.alert_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+          url: alert.source_url // Passing the URL down to the card
+        });
         return acc;
       }, {}) || {};
 
       const transformedFunds: FundData[] = schemesData.map((scheme: any, index: number) => {
         const schemeId = scheme.id?.toString();
-        const holdings = holdingsByScheme[schemeId] || [];
-        const newEntries = holdings.slice(0, 3);
-        const completeExits = holdings.length > 3 ? holdings.slice(3, 5) : [];
+        
+        const schemeHoldings = holdingsByScheme[schemeId] || { entries: [], exits: [] };
+        const schemeAlerts = alertsByScheme[schemeId] || [];
+        const fallbackNews = [{ title: 'No recent updates or alerts', time: '' }];
 
         return {
           id: schemeId || String(index),
-          name: scheme.scheme_name || `Fund ${index + 1}`,
-          nav: scheme.nav || 100,
-          navChange: scheme.nav_change || 0,
+          name: scheme.name || `Fund ${index + 1}`,
+          nav: 100,
+          navChange: 0,
           category: scheme.category || 'Multi Cap',
           categoryChanged: false,
           fundManager: scheme.fund_manager || 'Not Available',
           managerChanged: false,
+          strategy_tags: scheme.strategy_tags || [],
           portfolioChurn: {
-            newEntries: newEntries.length > 0 ? newEntries : ['No current changes'],
-            completeExits: completeExits.length > 0 ? completeExits : ['No current changes']
+            newEntries: schemeHoldings.entries.length > 0 ? schemeHoldings.entries : ['No current changes'],
+            completeExits: schemeHoldings.exits.length > 0 ? schemeHoldings.exits : ['No current changes']
           },
           sectorDrift: [],
           performance: [
@@ -78,11 +117,7 @@ function App() {
           benchmark: 'Nifty 500',
           oneYearReturn: scheme.one_year_return || 24.5,
           benchmarkOneYearReturn: 21.3,
-          news: [
-            { title: 'Fund performance updated', time: '2 hours ago' },
-            { title: 'Portfolio allocation adjusted', time: '1 day ago' },
-            { title: 'Fund outperforms benchmark', time: '3 days ago' }
-          ]
+          news: schemeAlerts.length > 0 ? schemeAlerts : fallbackNews
         };
       });
 
@@ -99,7 +134,6 @@ function App() {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       <Sidebar />
-
       <main className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto p-8">
           <div className="mb-8">
@@ -110,13 +144,11 @@ function App() {
               Monitor your mutual fund portfolio performance and analytics
             </p>
           </div>
-
           {error && (
             <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
               <p className="text-sm text-amber-800 dark:text-amber-200">{error}</p>
             </div>
           )}
-
           <div className="space-y-6">
             {loading ? (
               <>
