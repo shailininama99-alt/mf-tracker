@@ -129,3 +129,77 @@ export function FundCard({ fund }: FundCardProps) {
                       </li>
                     ))}
                   </ul>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
+              Sector Drift
+            </h3>
+            <SectorDrift data={fund.sectorDrift} />
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
+                Performance
+              </h3>
+              <div className="text-right">
+                <div className="text-xs text-gray-500 dark:text-gray-400">1Y Return</div>
+                <div
+                  className={`text-lg font-bold ${
+                    isOutperforming
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-gray-900 dark:text-white'
+                  }`}
+                >
+                  {fund.oneYearReturn}%
+                </div>
+              </div>
+            </div>
+            <div className="mb-8">
+              <PerformanceChart
+                data={fund.performance}
+                fundName={fund.name}
+                benchmark={fund.benchmark}
+              />
+            </div>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
+              Latest News
+            </h3>
+            <div className="space-y-3">
+              {fund.news.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="pb-3 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
+                >
+                  <div className="text-sm font-medium mb-1 leading-snug">
+                    {/* THIS IS THE NEW CLICKABLE LINK LOGIC */}
+                    {item.url ? (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-600 dark:text-blue-400 cursor-pointer">
+                        {item.title}
+                      </a>
+                    ) : (
+                      <span className="text-gray-900 dark:text-white">{item.title}</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{item.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
