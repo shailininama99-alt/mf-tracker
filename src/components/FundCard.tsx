@@ -19,6 +19,18 @@ export function FundCard({ fund }: FundCardProps) {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               {fund.name}
             </h2>
+            
+            {/* Strategy Badges */}
+            {fund.strategy_tags && fund.strategy_tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {fund.strategy_tags.map((tag, idx) => (
+                  <span key={idx} className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Category:</span>
@@ -117,70 +129,3 @@ export function FundCard({ fund }: FundCardProps) {
                       </li>
                     ))}
                   </ul>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
-              Sector Drift
-            </h3>
-            <SectorDrift data={fund.sectorDrift} />
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
-                Performance
-              </h3>
-              <div className="text-right">
-                <div className="text-xs text-gray-500 dark:text-gray-400">1Y Return</div>
-                <div
-                  className={`text-lg font-bold ${
-                    isOutperforming
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-gray-900 dark:text-white'
-                  }`}
-                >
-                  {fund.oneYearReturn}%
-                </div>
-              </div>
-            </div>
-            <div className="mb-8">
-              <PerformanceChart
-                data={fund.performance}
-                fundName={fund.name}
-                benchmark={fund.benchmark}
-              />
-            </div>
-          </div>
-
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
-              Latest News
-            </h3>
-            <div className="space-y-3">
-              {fund.news.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="pb-3 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0"
-                >
-                  <p className="text-sm text-gray-900 dark:text-white font-medium mb-1 leading-snug">
-                    {item.title}
-                  </p>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{item.time}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
