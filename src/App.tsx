@@ -35,17 +35,14 @@ function App() {
         return;
       }
 
-      // 1. Fetch Holdings (Now pulling Types and Percentages)
+      // 1. Fetch Holdings
       const { data: holdingsData } = await supabase
         .from('mf_holdings')
         .select('scheme_id, stock_name, change_type, change_percentage');
 
       const holdingsByScheme = holdingsData?.reduce((acc: any, holding: any) => {
-        if (!acc[holding.scheme_id]) {
-          acc[holding.scheme_id] = { entries: [], exits: [] };
-        }
+        if (!acc[holding.scheme_id]) acc[holding.scheme_id] = { entries: [], exits: [] };
         
-        // Format the string dynamically based on the database values
         const pct = holding.change_percentage ? `${holding.change_percentage}%` : '';
         let displayStr = holding.stock_name;
         
@@ -54,7 +51,6 @@ function App() {
         else if (holding.change_type === 'Partial Exit') displayStr = `${holding.stock_name} (-${pct})`;
         else if (holding.change_type === 'Complete Exit') displayStr = `${holding.stock_name} (-${pct} Exit)`;
         
-        // Sort into the correct bucket
         if (holding.change_type === 'New Entry' || holding.change_type === 'Added') {
           acc[holding.scheme_id].entries.push(displayStr);
         } else if (holding.change_type === 'Partial Exit' || holding.change_type === 'Complete Exit') {
@@ -62,40 +58,58 @@ function App() {
         } else {
            acc[holding.scheme_id].entries.push(displayStr);
         }
-        
         return acc;
       }, {}) || {};
 
-      // 2. Fetch Alerts (Now pulling the URL)
+      // 2. Fetch Alerts
       const { data: alertsData } = await supabase
         .from('mf_alerts')
         .select('scheme_id, alert_text, alert_date, source_url')
         .order('alert_date', { ascending: false });
 
       const alertsByScheme = alertsData?.reduce((acc: any, alert: any) => {
-        if (!acc[alert.scheme_id]) {
-          acc[alert.scheme_id] = [];
-        }
+        if (!acc[alert.scheme_id]) acc[alert.scheme_id] = [];
         acc[alert.scheme_id].push({
           title: alert.alert_text,
           time: new Date(alert.alert_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
-          url: alert.source_url // Passing the URL down to the card
+          url: alert.source_url 
         });
         return acc;
       }, {}) || {};
 
-      const transformedFunds: FundData[] = schemesData.map((scheme: any, index: number) => {
+      // 3. Map Data and Fetch Live AMFI NAVs simultaneously
+      const transformedFundsPromises = schemesData.map(async (scheme: any, index: number) => {
         const schemeId = scheme.id?.toString();
-        
         const schemeHoldings = holdingsByScheme[schemeId] || { entries: [], exits: [] };
         const schemeAlerts = alertsByScheme[schemeId] || [];
         const fallbackNews = [{ title: 'No recent updates or alerts', time: '' }];
 
+        // LIVE NAV FETCHING LOGIC
+        let liveNav = 100.00;
+        let liveNavChange = 0.00;
+
+        if (scheme.amfi_code) {
+          try {
+            const response = await fetch(`https://api.mfapi.in/mf/${scheme.amfi_code}`);
+            const apiData = await response.json();
+            
+            if (apiData.data && apiData.data.length >= 2) {
+              const todayNav = parseFloat(apiData.data[0].nav);
+              const yesterdayNav = parseFloat(apiData.data[1].nav);
+              liveNav = todayNav;
+              // Calculate percentage change: ((Today - Yesterday) / Yesterday) * 100
+              liveNavChange = parseFloat((((todayNav - yesterdayNav) / yesterdayNav) * 100).toFixed(2));
+            }
+          } catch (navErr) {
+            console.error(`Failed to fetch NAV for ${scheme.name}`, navErr);
+          }
+        }
+
         return {
           id: schemeId || String(index),
           name: scheme.name || `Fund ${index + 1}`,
-          nav: 100,
-          navChange: 0,
+          nav: liveNav, // Injecting the Live NAV!
+          navChange: liveNavChange, // Injecting the Live Change!
           category: scheme.category || 'Multi Cap',
           categoryChanged: false,
           fundManager: scheme.fund_manager || 'Not Available',
@@ -121,7 +135,10 @@ function App() {
         };
       });
 
+      // Wait for all the API calls to finish
+      const transformedFunds = await Promise.all(transformedFundsPromises);
       setFunds(transformedFunds);
+
     } catch (err) {
       console.error('Error fetching funds:', err);
       setError('Failed to fetch funds. Using demo data.');
