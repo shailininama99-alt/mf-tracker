@@ -7,6 +7,7 @@ export interface FundData {
   categoryChanged: boolean;
   fundManager: string;
   managerChanged: boolean;
+  strategy_tags?: string[];
   portfolioChurn: {
     newEntries: string[];
     completeExits: string[];
@@ -26,6 +27,7 @@ export interface FundData {
   news: {
     title: string;
     time: string;
+    url?: string;
   }[];
 }
 
@@ -39,15 +41,16 @@ export const fundData: FundData[] = [
     categoryChanged: false,
     fundManager: 'Rajeev Thakkar',
     managerChanged: true,
+    strategy_tags: ['Value Investing', 'High Cash Holding', 'Global Equity'],
     portfolioChurn: {
       newEntries: [
-        'HDFC Bank Ltd.',
-        'Microsoft Corporation',
-        'Alphabet Inc. Class A'
+        'HDFC Bank Ltd. (+0.50% New)',
+        'Microsoft Corporation (+0.30%)',
+        'Alphabet Inc. Class A (+0.15%)'
       ],
       completeExits: [
-        'Facebook Inc.',
-        'Bajaj Finance Ltd.'
+        'ITC Ltd (-1.20% Exit)',
+        'Bajaj Finance Ltd. (-0.40%)'
       ]
     },
     sectorDrift: [
@@ -69,8 +72,8 @@ export const fundData: FundData[] = [
     oneYearReturn: 24.5,
     benchmarkOneYearReturn: 21.3,
     news: [
-      { title: 'Parag Parikh Fund adds tech giants to portfolio amid market volatility', time: '2 hours ago' },
-      { title: 'Fund manager switches defensive stance, increases equity exposure', time: '1 day ago' },
+      { title: 'Parag Parikh Fund adds tech giants to portfolio amid market volatility', time: '2 hours ago', url: 'https://www.moneycontrol.com' },
+      { title: 'Fund manager switches defensive stance, increases equity exposure', time: '1 day ago', url: 'https://www.livemint.com' },
       { title: 'Flexi cap funds outperform benchmarks in Q1 2024', time: '3 days ago' }
     ]
   },
@@ -83,15 +86,16 @@ export const fundData: FundData[] = [
     categoryChanged: false,
     fundManager: 'Chirag Setalvad',
     managerChanged: false,
+    strategy_tags: ['Small Cap Focus', 'High Volatility', 'Growth'],
     portfolioChurn: {
       newEntries: [
-        'Dixon Technologies',
-        'Polycab India Ltd.',
-        'Persistent Systems'
+        'Dixon Technologies (+1.10% New)',
+        'Polycab India Ltd. (+0.50%)',
+        'Persistent Systems (+0.25%)'
       ],
       completeExits: [
-        'Crompton Greaves',
-        'Route Mobile Ltd.'
+        'Crompton Greaves (-0.70%)',
+        'Route Mobile Ltd. (-1.50% Exit)'
       ]
     },
     sectorDrift: [
@@ -113,8 +117,8 @@ export const fundData: FundData[] = [
     oneYearReturn: 31.8,
     benchmarkOneYearReturn: 28.4,
     news: [
-      { title: 'HDFC Small Cap Fund bets big on manufacturing sector', time: '4 hours ago' },
-      { title: 'Small cap funds see highest inflows in 18 months', time: '2 days ago' },
+      { title: 'HDFC Small Cap Fund bets big on manufacturing sector', time: '4 hours ago', url: 'https://www.moneycontrol.com' },
+      { title: 'Small cap funds see highest inflows in 18 months', time: '2 days ago', url: 'https://www.valueresearchonline.com' },
       { title: 'Fund reduces financial exposure, pivots to industrials', time: '5 days ago' }
     ]
   }
